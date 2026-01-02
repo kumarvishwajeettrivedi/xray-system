@@ -17,9 +17,9 @@ graph TD
         DB[("PostgreSQL")]
         UI["Streamlit Dashboard"]
         
-        SDK -->|HTTP POST (Async)| API
-        API -->|Write| DB
-        UI -->|Read| DB
+        SDK -- "HTTP POST (Async)" --> API
+        API -- "Write" --> DB
+        UI -- "Read" --> DB
     end 
 ```
 
