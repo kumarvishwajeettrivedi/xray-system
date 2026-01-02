@@ -179,7 +179,5 @@ class PipelineRun:
             "steps": [s.to_dict() for s in self.steps],
             "success": self.success,
             "error": self.error,
-            self.final_output = final_output
-        if error:
-            self.success = False
-            self.error = error
+            "final_output": self.final_output,
+        }
