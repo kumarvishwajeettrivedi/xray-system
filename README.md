@@ -1,0 +1,119 @@
+# X-Ray SDK: Pipeline Decision Debugging
+
+**A debugging system for multi-step, non-deterministic algorithmic pipelines.**
+
+X-Ray provides visibility into complex systems (like RAG, Search, or Recommendation pipelines) by capturing decision context at each step. Unlike traditional tracing that shows "what happened," X-Ray reveals "**why this output**" by tracking inputs, candidates, filtering logic, and reasoning.
+
+This implementation demonstrates the core SDK and API for debugging pipelines like competitor selection, listing optimization, and product categorization.
+
+---
+
+## Quick Start
+
+### Prerequisites
+- Python 3.9+
+- PostgreSQL 12+
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/vishwajeet-trivedi/xray-system.git
+   cd xray-system
+   ```
+
+2. **Set up Virtual Environment**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+3. **Configure Database**
+   - Create a Postgres database named `xray_db`.
+   - Copy `.env.example` to `.env` and update credentials.
+   - Run the setup script:
+     ```bash
+     psql -U postgres -d xray_db -f postgres_setup.sql
+     ```
+
+4. **Start the API**
+   ```bash
+   python run_api.py
+   # API running at http://localhost:8000
+   ```
+
+5. **Install SDK (Editable Mode)**
+   ```bash
+   pip install -e .
+   ```
+
+---
+
+## Example Usage
+
+### 1. Run the Demo Pipeline
+We have provided a robust example simulating a "Competitor Selection" pipeline.
+
+```bash
+python examples/competitor_selection.py
+```
+*This script runs a batch of 300 products to demonstrate performance and latency tracking.*
+
+### 2. View Traces (Frontend)
+Launch the included Streamlit dashboard to explore runs.
+
+```bash
+streamlit run frontend/streamlit_app.py
+```
+*Visit http://localhost:8501*
+
+### 3. Production Integration
+To instrument your own code:
+
+```python
+from xray_sdk import XRayTracer
+
+tracer = XRayTracer("my_pipeline")
+
+with tracer.start_run() as run:
+    with run.step("filtering", "filter") as step:
+        step.set_input({"candidates": 5000})
+        # ... logic ...
+        step.add_decision("filtered_out", "Price too high", {"threshold": 100})
+```
+
+---
+
+## Architecture Overview
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full technical deep dive.
+
+### Core Components
+- **X-Ray SDK**: Lightweight Python context managers for capturing data. Default `fail_silently=True` for production safety.
+- **X-Ray API**: Async FastAPI service handling high-throughput ingestion.
+- **PostgreSQL**: Hybrid Relational + JSONB data model. Allows structured queries ("show all failed runs") and flexible analysis ("show reasoning for step X").
+
+### Key Design Decisions
+- **Hybrid Data Model**: Normalized `runs` table for speed; JSONB for flexible step context.
+- **Sampling Strategy**: `summary()` mode and `sample_rate` logic designed for high-cardinality steps (5000+ items).
+- **Graceful Degradation**: If the API is down, the SDK ensures your pipeline continues running.
+
+---
+
+## Current Limitations
+
+### Implementation Scope
+- **Mock Data**: The demo uses synthetic data and simulated LLM latencies.
+- **Single Instance**: Designed for a single-server deployment (simplified for this assignment).
+- **Synchronous Ingestion**: Traces are sent at the end of a run via HTTP.
+
+## Future Roadmap
+
+### Production Enhancements
+1. **Async Queueing**: Implement Redis/Celery to offload trace ingestion from the critical path.
+2. **Blob Storage**: Move large candidate lists to S3/GCS, keeping Postgres lean for metadata.
+3. **Advanced Sampling**: implement dynamic "tail sampling" to keep only interesting traces (failures/anomalies).
+4. **Auto-Instrumentation**: Decorators for popular libraries (LangChain, LlamaIndex).
+
+---
