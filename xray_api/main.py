@@ -10,7 +10,7 @@ Provides endpoints for:
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, String
 from typing import Optional, List
 from datetime import datetime
 import json
