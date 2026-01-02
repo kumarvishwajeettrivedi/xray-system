@@ -213,7 +213,7 @@ async def list_runs(
     # Filter by tag if provided (using simple JSON containment check)
     # Note: For optimized high-scale tagging, we might use a separate table or GIN index
     # But for this assignment, a simple cast or LIKE check works for basic JSON arrays
-    tags: Optional[str] = Query(None, description="Filter by tag (e.g., 'team-a')")
+    # tags argument is already defined in function signature
     if tags:
         # Check if the JSON array contains the tag. 
         # In standardized Postgres JSONB, we'd use @> operator, but for generalized JSON column:
