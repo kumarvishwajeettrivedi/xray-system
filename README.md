@@ -10,7 +10,7 @@ This implementation demonstrates the core SDK and API for debugging pipelines li
 
 ## Quick Start
 
-### Prerequisites
+### Tools
 - Python 3.9+
 - PostgreSQL 12+
 
@@ -50,7 +50,7 @@ This implementation demonstrates the core SDK and API for debugging pipelines li
 
 ---
 
-## Example Usage
+## Example
 
 ### 1. Run the Demo Pipeline
 We have provided a robust example simulating a "Competitor Selection" pipeline.
