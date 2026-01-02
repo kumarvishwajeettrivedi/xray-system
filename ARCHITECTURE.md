@@ -13,9 +13,9 @@ graph TD
     end
 
     subgraph "X-Ray Platform"
-        API[Ingest API (FastAPI)]
-        DB[(PostgreSQL)]
-        UI[Streamlit Dashboard]
+        API["Ingest API (FastAPI)"]
+        DB[("PostgreSQL")]
+        UI["Streamlit Dashboard"]
         
         SDK -->|HTTP POST (Async)| API
         API -->|Write| DB
