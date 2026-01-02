@@ -108,7 +108,7 @@ class XRayTracer:
             raise
         finally:
             # Complete the run
-            if not run.completed_at:
+            if not run.end_time:
                 run.complete()
 
             # Send to API if configured
