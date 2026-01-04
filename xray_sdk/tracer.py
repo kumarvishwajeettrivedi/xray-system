@@ -206,7 +206,8 @@ class RunContext:
         """Manually send the run to the X-Ray API"""
         if self.client:
             try:
-                self.client.send_run(self.run)
+                # Use background sending to avoid blocking
+                self.client.send_run_background(self.run)
             except Exception as e:
                 if not self.fail_silently:
                     raise

@@ -128,6 +128,44 @@ elif page == "Run Details":
 
             st.divider()
 
+            # Timeline Visualization (Gantt Chart)
+            st.subheader("Execution Timeline")
+            
+            if data['steps']:
+                import plotly.express as px
+                
+                # Prepare data for Gantt
+                timeline_data = []
+                run_start = datetime.fromisoformat(data['started_at'])
+                
+                for step in data['steps']:
+                    step_start = datetime.fromisoformat(step['timestamp'])
+                    duration_s = step.get('duration_ms', 0) / 1000.0
+                    step_end = step_start.replace(microsecond=int(step_start.microsecond + duration_s * 1000000))
+                    
+                    timeline_data.append(dict(
+                        Step=step['step_name'],
+                        Start=step_start,
+                        Finish=step_end,
+                        Type=step['step_type'],
+                        Duration=f"{step.get('duration_ms', 0):.0f} ms"
+                    ))
+                
+                if timeline_data:
+                    fig = px.timeline(
+                        timeline_data, 
+                        x_start="Start", 
+                        x_end="Finish", 
+                        y="Step", 
+                        color="Type",
+                        hover_data=["Duration"],
+                        title="Step Execution Timeline"
+                    )
+                    fig.update_yaxes(autorange="reversed") # Top to bottom
+                    st.plotly_chart(fig, use_container_width=True)
+
+            st.divider()
+
             # Final output
             st.subheader("Final Output")
             if data.get('final_output'):

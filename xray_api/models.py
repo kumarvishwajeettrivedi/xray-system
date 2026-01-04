@@ -26,7 +26,7 @@ class PipelineRunModel(Base):
     """
     __tablename__ = "pipeline_runs"
 
-    __tablename__ = "pipeline_runs"
+
 
     run_id = Column(String, primary_key=True, index=True)
 
@@ -66,7 +66,7 @@ class StepTraceModel(Base):
     """
     __tablename__ = "step_traces"
 
-    __tablename__ = "step_traces"
+
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     run_id = Column(String, ForeignKey("pipeline_runs.run_id", ondelete="CASCADE"), nullable=False, index=True)

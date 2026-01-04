@@ -61,7 +61,7 @@ python examples/competitor_selection.py
 *This script runs a batch of 300 products to demonstrate performance and latency tracking.*
 
 ### 2. View Traces (Frontend)
-Launch the included Streamlit dashboard to explore runs.
+Launch the included Streamlit dashboard to explore runs. It checks **interactive Gantt charts** to visualize step latency and parallelism.
 
 ```bash
 streamlit run frontend/streamlit_app.py
@@ -96,6 +96,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full technical deep dive.
 
 ### Key Design Decisions
 - **Hybrid Data Model**: Normalized `runs` table for speed; JSONB for flexible step context.
+- **Async Ingestion**: The SDK uses a background worker thread to send traces, ensuring **zero latency impact** on the main application execution.
 - **Sampling Strategy**: `summary()` mode and `sample_rate` logic designed for high-cardinality steps (5000+ items).
 - **Graceful Degradation**: If the API is down, the SDK ensures your pipeline continues running.
 
@@ -106,12 +107,11 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full technical deep dive.
 ### Implementation Scope
 - **Mock Data**: The demo uses synthetic data and simulated LLM latencies.
 - **Single Instance**: Designed for a single-server deployment (simplified for this assignment).
-- **Synchronous Ingestion**: Traces are sent at the end of a run via HTTP.
 
 ## Future Roadmap
 
 ### Production Enhancements
-1. **Async Queueing**: Implement Redis/Celery to offload trace ingestion from the critical path.
+1. **Persistent Queueing**: Upgrade from in-memory queue to Redis/Celery for durability across restarts.
 2. **Blob Storage**: Move large candidate lists to S3/GCS, keeping Postgres lean for metadata.
 3. **Advanced Sampling**: implement dynamic "tail sampling" to keep only interesting traces (failures/anomalies).
 4. **Auto-Instrumentation**: Decorators for popular libraries (LangChain, LlamaIndex).

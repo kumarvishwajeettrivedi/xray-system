@@ -34,6 +34,38 @@ class XRayClient:
         self.api_url = api_url.rstrip('/')
         self.timeout = timeout
         self.api_key = api_key
+        
+        # Background worker setup
+        import threading
+        import queue
+        self._queue = queue.Queue()
+        self._stop_event = threading.Event()
+        self._worker_thread = threading.Thread(target=self._worker, daemon=True)
+        self._worker_thread.start()
+
+    def _worker(self):
+        """Background worker to send runs"""
+        import time
+        while True:
+            try:
+                # Get a run from the queue
+                run = self._queue.get()
+                if run is None:  # Sentinel to stop
+                    break
+                
+                try:
+                    self.send_run(run)
+                except Exception:
+                    # In a real system, we'd log this error
+                    pass
+                finally:
+                    self._queue.task_done()
+            except Exception:
+                pass
+
+    def send_run_background(self, run: PipelineRun):
+        """Enqueue a run to be sent in the background"""
+        self._queue.put(run)
 
     def send_run(self, run: PipelineRun) -> Dict[str, Any]:
         """
