@@ -18,7 +18,7 @@ This implementation demonstrates the core SDK and API for debugging pipelines li
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/vishwajeet-trivedi/xray-system.git
+   git clone https://github.com/kumarvishwajeettrivedi/xray-system.git
    cd xray-system
    ```
 
