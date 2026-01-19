@@ -244,9 +244,9 @@ class StepContext:
         if self._should_sample:
             self.step.input_candidates = candidates
         else:
-            # If not sampling, store only summary counts
-            # (In a real system, we'd store a small subset, e.g. top 5)
-            pass 
+            # FIX: If not sampling, store the count in metadata so we don't lose the "Size" context.
+            # Even though we drop the list, knowing we dropped 5,000 items is crucial.
+            self.step.metadata["input_count"] = len(candidates)
 
     def set_output_candidates(self, candidates: List[Candidate]):
         if self._should_sample:
