@@ -97,13 +97,13 @@ with run.step("massive_filter", sample_rate=0.1) as step:
 
 ## 4. Debugging Walkthrough
 
-**Scenario**: A user reports that searching for **"Laptop Stand"** returned a **"Phone Case"**.
+**Scenario**: A user reports that the competitor selection pipeline selected an **irrelevant product** for a given user.
 
 ### Step 1: Find the Run
-Query the API for the specific bad run.
+Query the API for the specific user's runs.
 
 ```bash
-GET /api/runs?pipeline_name=competitor_search&context={"user_query": "Laptop Stand"}
+GET /api/runs?pipeline_name=competitor_selection&context={"user_id": "user_123"}
 ```
 
 ### Step 2: Inspect the Decisions (The "X-Ray" View)
@@ -112,17 +112,17 @@ We retrieve the trace and look at the `ranking` step.
 **API Response (Simplified):**
 ```json
 {
-  "step_name": "relevance_ranking",
+  "step_name": "ranking",
   "step_type": "llm_rank",
-  "inputs": {"query": "Laptop Stand"},
-  "outputs": {"winner": "iPhone 14 Pro Case"},
+  "inputs": {"criteria": "price_similarity"},
+  "outputs": {"winner_id": "competitor_456"},
   "decisions": [
     {
       "action": "ranked_first",
-      "reason": "High visual similarity score (0.95)",
+      "reason": "Price $50 is closest to target $48",
       "metadata": {
-        "model_version": "v2_visual_embedder",
-        "insight": "Model prioritized 'rectangular object' over size dimensions."
+        "score": 0.98,
+        "model": "gpt-4-turbo"
       }
     }
   ]
@@ -130,8 +130,8 @@ We retrieve the trace and look at the `ranking` step.
 ```
 
 ### Step 3: Root Cause Analysis
-**Insight**: The `reason` field reveals the ranking model is over-indexing on visual shape (rectangular) and ignoring size dimensions from the metadata.
-**Fix**: Update the embedding model or add a "dimensions_match" filter step *before* ranking.
+**Insight**: The `reason` field reveals the ranking model is strictly prioritizing price similarity over feature parity.
+**Fix**: Update the ranking prompt to weight feature overlap higher than price difference.
 
 ---
 
@@ -206,3 +206,33 @@ SDK defaults to `fail_silently=True`. If API is unreachable, traces are dropped 
 ### 3. Tail Sampling
 *   **Current**: `sample_rate` is static.
 *   **Future**: Keep 100% of *failed* runs and only 1% of *successful* runs.
+
+---
+
+## 8. API Specification
+
+### Runs
+
+**`GET /api/runs`**
+List all pipeline runs with optional filters.
+*   **Parameters**:
+    *   `pipeline_name` (string): Filter by pipeline name (e.g. `competitor_selection`, `product_categorization`)
+    *   `success` (boolean): `true` or `false`
+    *   `context` (json): JSON subset match on context field.
+        *   Example: `{"user_id": "usr_8f92a1b3c4d5"}` or `{"sku": "8402451-DK"}`
+*   **Response**: List of `PipelineRunSummary` objects.
+
+**`POST /api/runs`**
+Ingest a new run (used by SDK).
+*   **Payload**: Full `PipelineRunCreate` object including all steps and metadata.
+
+### Analytics
+
+**`GET /api/steps`**
+Query individual steps across all runs.
+*   **Parameters**:
+    *   `step_type` (string): e.g. `llm_call`, `filter`
+    *   `min_reduction_rate` (float): 0.0 to 1.0 (find aggressive filters)
+    *   `min_duration_ms` (float): Find slow steps
+*   **Response**: List of `StepTraceSchema` objects.
+

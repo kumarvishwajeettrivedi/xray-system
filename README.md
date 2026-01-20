@@ -60,7 +60,60 @@ python examples/competitor_selection.py
 ```
 *This script runs a batch of 300 products to demonstrate performance and latency tracking.*
 
-### 2. View Traces (Frontend)
+### 2. API Reference (Postman-ready)
+You can test these endpoints directly using Postman or curl.
+
+#### **Health Check**
+- `GET /`
+
+#### **Runs**
+- **List Runs**: `GET /api/runs`
+  - Filters: `pipeline_name`, `success`, `tags`, `context`
+  
+  **Real World Examples:**
+  
+  *1. Competitor Selection (Scenario A):* Find runs for a specific user ID.
+  ```bash
+  GET /api/runs?pipeline_name=competitor_selection&context={"user_id": "usr_8f92a1b3c4d5"}
+  ```
+
+  *2. Listing Optimization (Scenario B):* Find runs for a specific listing ID.
+  ```bash
+  GET /api/runs?pipeline_name=listing_optimization&context={"listing_id": "L-99887712"}
+  ```
+
+  *3. Product Categorization (Scenario C):* Find runs where a specific SKU was processed.
+  ```bash
+  GET /api/runs?pipeline_name=product_categorization&context={"sku": "8402451-DK"}
+  ```
+
+  *4. Failed Runs:* Find only failed runs to debug issues.
+  ```bash
+  GET /api/runs?success=false
+  ```
+
+### 3. Examples & Scenarios
+We provide scripts simulating real-world complex pipelines:
+
+#### **Scenario A: Competitor Selection**
+finds the best competitor product.
+```bash
+python examples/competitor_selection.py
+```
+
+#### **Scenario B: Listing Optimization**
+Optimizes product titles and descriptions using competitor patterns.
+```bash
+python examples/listing_optimization.py
+```
+
+#### **Scenario C: Product Categorization**
+Assigns new products to a taxonomy using LLM + Vector Search logic.
+```bash
+python examples/product_categorization.py
+```
+
+### 4. View Traces (Frontend)
 Launch the included Streamlit dashboard to explore runs. It checks **interactive Gantt charts** to visualize step latency and parallelism.
 
 ```bash
@@ -68,8 +121,10 @@ streamlit run frontend/streamlit_app.py
 ```
 *Visit http://localhost:8501*
 
-### 3. Production Integration
-To instrument your own code:
+### 3. API Reference (Postman-ready)
+See [API Reference](#2-api-reference-postman-ready) above or [ARCHITECTURE.md](./ARCHITECTURE.md) for full details.
+
+### 4. View Traces (Frontend)
 
 ```python
 from xray_sdk import XRayTracer

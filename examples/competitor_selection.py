@@ -128,7 +128,7 @@ def select_best_competitor(ranked_candidates: List[tuple[Dict[str, Any], float, 
 
 
 # Main pipeline with X-Ray instrumentation
-def find_competitor_product(product: Dict[str, Any], api_url: str = "http://localhost:8000") -> Dict[str, Any]:
+def find_competitor_product(product: Dict[str, Any], user_id: str, api_url: str = "http://localhost:8000") -> Dict[str, Any]:
     """
     Find the best competitor product with full X-Ray tracing.
 
@@ -146,7 +146,7 @@ def find_competitor_product(product: Dict[str, Any], api_url: str = "http://loca
 
     val_tags = ["team_search", "experiment_A"] if product['id'].endswith("0") else ["team_search"]
     # Start a traced run
-    with tracer.start_run(context={"product_id": product['id'], "user_id": "user_123"}, tags=val_tags) as run:
+    with tracer.start_run(context={"product_id": product['id'], "user_id": user_id}, tags=val_tags) as run:
 
         # Step 1: Generate keywords using LLM
         with run.step("keyword_generation", "llm_call") as step:
@@ -351,10 +351,35 @@ if __name__ == "__main__":
     # Example product
     print("🚀 Starting large batch test (300 products)...")
     
-    products = [
-        {"id": f"TEST-{i}", "title": f"Laptop Stand Model {i}", "category": "Office", "price": 45 + (i % 50)} 
-        for i in range(300)
-    ]
+    import uuid
+    
+    # Generate realistic-looking data
+    def generate_asin():
+        return f"B0{random.randint(10000000, 99999999)}"
+        
+    def generate_user_id():
+        return f"usr_{uuid.uuid4().hex[:12]}"
+
+    products = []
+    # Create a verifiable "Gold Standard" case for documentation
+    products.append({
+        "id": "B08N5X9W8L", 
+        "title": "Adjustable Aluminum Laptop Stand for Desk", 
+        "category": "Office", 
+        "price": 49.99
+    })
+    
+    # Generate batch
+    for i in range(200):
+        products.append({
+            "id": generate_asin(), 
+            "title": f"Laptop Stand Model {i}", 
+            "category": "Office", 
+            "price": 45 + (i % 50)
+        })
+    
+    # Use a fixed User ID for the "Bad Run" scenario in docs
+    fixed_user_id = "usr_8f92a1b3c4d5"
 
     import time
     start_time = time.time()
@@ -362,7 +387,12 @@ if __name__ == "__main__":
     for i, product in enumerate(products):
         if (i+1) % 10 == 0:
             print(f"[{i+1}/300] Processing...")
-        find_competitor_product(product, api_url="http://localhost:8000")
+        # For the documented case, use the specific user ID
+        current_user = fixed_user_id if product['id'] == "B08N5X9W8L" else generate_user_id()
+        
+        # Pass the context explicitly to the function (update signature needed or handle inside)
+        # We'll update the function call to pass these for better context
+        find_competitor_product(product, user_id=current_user, api_url="http://localhost:8000")
 
         
     total_time = time.time() - start_time
