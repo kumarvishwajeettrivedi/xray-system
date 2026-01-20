@@ -187,6 +187,7 @@ async def list_runs(
     pipeline_version: Optional[str] = None,
     success: Optional[bool] = None,
     tags: Optional[str] = Query(None, description="Filter by tag"),
+    context: Optional[str] = Query(None, description="Filter by context JSON (e.g. {'user_id': '123'})"),
     limit: int = Query(default=100, le=1000),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -198,6 +199,7 @@ async def list_runs(
     - pipeline_name: Specific pipeline
     - pipeline_version: Specific version
     - success: Filter by outcome
+    - context: Filter by context fields (exact match on JSON subset)
     """
     # Build query
     query = select(PipelineRunModel)
@@ -210,16 +212,24 @@ async def list_runs(
     if success is not None:
         conditions.append(PipelineRunModel.success == success)
     
-    # Filter by tag if provided (using simple JSON containment check)
-    # Note: For optimized high-scale tagging, we might use a separate table or GIN index
-    # But for this assignment, a simple cast or LIKE check works for basic JSON arrays
-    # tags argument is already defined in function signature
+    # Filter by tag if provided
     if tags:
-        # Check if the JSON array contains the tag. 
-        # In standardized Postgres JSONB, we'd use @> operator, but for generalized JSON column:
-        # We can simulate with a textual check or a custom operator depending on driver.
-        # Here we use a safe text-based check for the assignment simplicity:
         conditions.append(func.cast(PipelineRunModel.tags, String).like(f'%"{tags}"%'))
+
+    # Filter by context if provided
+    if context:
+        try:
+            context_dict = json.loads(context)
+            # Use JSON containment operator (@>)
+            # Note: We cast to JSONB to ensure we use the GIN index and proper operator
+            # even though the model defines it as generic JSON
+            from sqlalchemy.dialects.postgresql import JSONB
+            conditions.append(func.cast(PipelineRunModel.context, JSONB).contains(context_dict))
+        except json.JSONDecodeError:
+            # If invalid JSON, ignore or we could raise HTTPException
+            # For now we'll ignore to matching existing leniency, or raise 400?
+            # Better to raise 400 so user knows why it didn't filter
+            raise HTTPException(status_code=400, detail="Invalid JSON format for context parameter")
 
     if conditions:
         query = query.where(and_(*conditions))
